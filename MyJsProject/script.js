@@ -21,7 +21,7 @@ class LocalStorageUtil {
         let pushProduct = false; // предполагая, что продукт не был добавлен
         const index = products.findIndex(product => product.id === newProduct.id);
         if (index === -1) {
-            products.push({ id : newProduct.id, title : newProduct.title, desc: newProduct.description});
+            products.push({ id: newProduct.id, title: newProduct.title, desc: newProduct.description });
             pushProduct = true;
         } else {
             products.splice(index, 1);
@@ -45,13 +45,9 @@ class StoreCard {
         let htmlCatalog = '';
         let sumCatalog = 0;
         products.forEach(product => {
-            htmlCatalog += `<div class="catalog-Item">`;
-            htmlCatalog += `<div class="id"> Id: ${product.id}</div>`;
-            htmlCatalog += `<div class="title"> Title: ${product.title}</div>`;
-            htmlCatalog += `<div class="desc"> Desc: ${product.desc}</div>`;
-            htmlCatalog += `</div>`;
+
             sumCatalog += 1;
-        }); 
+        });
         ROOT_STORE_CARD.innerHTML = `<div>Products in cart:</div>${htmlCatalog}<div>Total: ${sumCatalog}</div>`
     }
 }
@@ -62,7 +58,7 @@ class Header {
         storeCardPage.render();
     }
     render(count) {
-        ROOT_HEADER.innerHTML = `<div>Number of products in cart: ${count}</div><button onclick="headerPage.handlerOpenStoreCardPage()">Open Cart</buttton>`
+        ROOT_HEADER.innerHTML = `<h3 class="Heading">Number of products in cart: ${count}</h3><button class="Action" onclick="renderDataFromApi()">Load Data from API</buttton>`
     }
 }
 
@@ -83,13 +79,19 @@ class Products {
 
     render() {
         const localStorageUtil = new LocalStorageUtil();
-        const products = localStorageUtil.getProducts();
-        const htmlCatalog = '';
-        products.forEach(product => {
-            htmlCatalog += `<div>${product.id} <button onclick="productsPage.handlerSetLocalStorage(this, ${product.id})"/></button> </div>`
-        });
 
-        ROOT_PRODUCTS.innerHTML = htmlCatalog;
+        let htmlStore = ``;
+        Catalog.forEach(product => {
+            console.log(product);
+            htmlStore += `<div class="Catalog-Items">`;
+            htmlStore += `<div class="image-box" src="${product.thumbnail}" alt="product"></div>`;
+            htmlStore += `<div class="title"> Title: ${product.title}</div>`;
+            htmlStore += `<div class="subtitle"> Price: ${product.price}</div>`;
+            htmlStore += `<div class="about"> Desc: ${product.description}</div>`;
+            htmlStore += `<button onclick="productsPage.handlerSetLocalStorage(this, ${product.id})"></button>`;
+            htmlStore += `</div>`;
+        });
+        ROOT_PRODUCTS.innerHTML = htmlStore;
     }
 }
 
@@ -104,30 +106,35 @@ let Catalog = [];
 function render() {
     const localStorageUtil = new LocalStorageUtil();
     const productsStore = localStorageUtil.getProducts();
- 
     headerPage.render(productsStore.length);
     productsPage.render();
- }
+}
 
 console.log('Initialization complete'); // Вывод в консоль для проверки
 
-fetch('https://dummyjson.com/products')
-    .then(res => res.json())
-    .then(data => {
-        Catalog = data.products;
-        setTimeout(() => {
-            const localStorageUtil = new LocalStorageUtil();
-            Catalog.forEach(product => {
-                localStorageUtil.putProducts(product);
-            });
-            render();
+
+render();
+
+function renderDataFromApi() {
+    fetch('https://dummyjson.com/products')
+        .then(res => res.json())
+        .then(data => {
+            Catalog = data.products;
+            setTimeout(() => {
+                // const localStorageUtil = new LocalStorageUtil();
+                productsPage.render();
+
+                // spinnerPage.handleClear()
+            }, 1000);
+
+
+        })
+        .catch(() => {
             // spinnerPage.handleClear()
-        }, 1000);
-        
+            // errorPage.render()
+        });
 
-    })
-    .catch(() => {
-        // spinnerPage.handleClear()
-        // errorPage.render()
-    });
-
+    //     Catalog.forEach(product => {
+    //         localStorageUtil.putProducts(product);
+    //     });
+}
