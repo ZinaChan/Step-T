@@ -16,12 +16,12 @@ class LocalStorageUtil {
         return products ? JSON.parse(products) : [];
     }
 
-    putProducts(newProduct) {
+    putProducts(id) {
         const products = this.getProducts();
         let pushProduct = false; // предполагая, что продукт не был добавлен
-        const index = products.findIndex(product => product.id === newProduct.id);
+        const index = products.findIndex(product => product.id === id);
         if (index === -1) {
-            products.push({ id: newProduct.id, title: newProduct.title, desc: newProduct.description });
+            products.push({ id: id});
             pushProduct = true;
         } else {
             products.splice(index, 1);
@@ -44,21 +44,26 @@ class StoreCard {
         const products = localStorageUtil.getProducts();
         let htmlCatalog = '';
         let sumCatalog = 0;
-        products.forEach(product => {
-
-            sumCatalog += 1;
+        Catalog.forEach(product => {
+            const productInCart = products.find(item => item.id === product.id);
+            if (productInCart) {
+                htmlCatalog += `<div class="item"> <h4> ${product.title} ---- $ ${product.price}</h4></div> `;
+                sumCatalog += product.price;
+            }
         });
-        ROOT_STORE_CARD.innerHTML = `<div>Products in cart:</div>${htmlCatalog}<div>Total: ${sumCatalog}</div>`
+        console.log(htmlCatalog);
+        ROOT_STORE_CARD.innerHTML = `<h2 class="title">Products in cart: </h2> <div class="shopping-items">${htmlCatalog}</div> <h3>Total: ${sumCatalog}</h3>`
     }
-}
-
+} 
 class Header {
     handlerOpenStoreCardPage() {
         const storeCardPage = new StoreCard();
         storeCardPage.render();
     }
     render(count) {
-        ROOT_HEADER.innerHTML = `<h3 class="Heading">Number of products in cart: ${count}</h3><button class="Action" onclick="renderDataFromApi()">Load Data from API</buttton>`
+        headerPage.handlerOpenStoreCardPage();
+
+        ROOT_HEADER.innerHTML = `<h3 >Number of products in cart: ${count}</h3> <button class="update-button"onclick="headerPage.handlerOpenStoreCardPage()">Updates Card</buttton>`
     }
 }
 
@@ -70,51 +75,52 @@ class Products {
     }
 
     handlerSetLocalStorage(element, id) {
-        const localStorageUtil = new LocalStorageUtil();
-        const { putProducts } = localStorageUtil.putProducts(id);
-        element.textCotent = putProducts ? this.labelRemove : this.labelAdd;
-
-        headerPage.render(localStorageUtil.getProducts.length);
+        const { pushProduct, products } = localStorageUtil.putProducts(id);
+        if (pushProduct) {
+            element.classList.add(this.classNameActive);
+            element.innerHTML = this.labelRemove;
+        } else {
+            element.classList.remove(this.classNameActive);
+            element.innerHTML = this.labelAdd;
+        }
+        headerPage.render(products.length);
     }
 
     render() {
-        const localStorageUtil = new LocalStorageUtil();
-
+        const products = localStorageUtil.getProducts(); 
         let htmlStore = ``;
         Catalog.forEach(product => {
-            console.log(product);
-            htmlStore += `<div class="Catalog-Items">`;
-            htmlStore += `<div class="image-box" src="${product.thumbnail}" alt="product"></div>`;
-            htmlStore += `<div class="title"> Title: ${product.title}</div>`;
-            htmlStore += `<div class="subtitle"> Price: ${product.price}</div>`;
-            htmlStore += `<div class="about"> Desc: ${product.description}</div>`;
-            htmlStore += `<button onclick="productsPage.handlerSetLocalStorage(this, ${product.id})"></button>`;
-            htmlStore += `</div>`;
+            const inCart = products.some(item => item.id === product.id);
+
+            console.log(product); 
+            // htmlStore += `<button onclick="productsPage.handlerSetLocalStorage(this, ${product.id})"> d</button>`;
+             htmlStore += `<div class="item-shop">`;
+            htmlStore += `<img class="image-box" src="${product.thumbnail}" alt="Product Image">`;
+            htmlStore += `<div class="about"> <h3>${product.title}</h3> <p>${product.price}$</p> <p>${product.description}</p> </div>`;
+            htmlStore += `<button class="${inCart ? this.classNameActive : ''}" onclick="productsPage.handlerSetLocalStorage(this, ${product.id})"> ${inCart ? this.labelRemove : this.labelAdd}</button>`;
+            htmlStore += `</div>`; 
         });
         ROOT_PRODUCTS.innerHTML = htmlStore;
     }
 }
 
-const headerPage = new Header();
-const productsPage = new Products();
-// const storePage = new StoreCard();
-// const spinnerPage = new ();
-// const errorPage = new ();
-
-let Catalog = [];
-
+// Функция для обновления интерфейса страницы
 function render() {
-    const localStorageUtil = new LocalStorageUtil();
     const productsStore = localStorageUtil.getProducts();
     headerPage.render(productsStore.length);
+    headerPage.handlerOpenStoreCardPage()
     productsPage.render();
 }
 
-console.log('Initialization complete'); // Вывод в консоль для проверки
+ let Catalog = [];
 
-
+ const localStorageUtil = new LocalStorageUtil();
+const storeCardPage = new StoreCard();
+const headerPage = new Header();
+const productsPage = new Products();
+  
 render();
-
+renderDataFromApi();
 function renderDataFromApi() {
     fetch('https://dummyjson.com/products')
         .then(res => res.json())
@@ -122,6 +128,7 @@ function renderDataFromApi() {
             Catalog = data.products;
             setTimeout(() => {
                 // const localStorageUtil = new LocalStorageUtil();
+                Catalog.splice(5);
                 productsPage.render();
 
                 // spinnerPage.handleClear()
@@ -132,9 +139,5 @@ function renderDataFromApi() {
         .catch(() => {
             // spinnerPage.handleClear()
             // errorPage.render()
-        });
-
-    //     Catalog.forEach(product => {
-    //         localStorageUtil.putProducts(product);
-    //     });
+        }); 
 }
