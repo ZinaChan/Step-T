@@ -4,8 +4,6 @@ const ROOT_STORE_CARD = document.getElementById('root_store_card');
 const ROOT_LOADER = document.getElementById('root_loader');
 const ROOT_ERROR = document.getElementById('root_error');
 
-// localStorage.clear();
-
 class LocalStorageUtil {
     constructor() {
         this.keyName = 'products';
@@ -18,10 +16,10 @@ class LocalStorageUtil {
 
     putProducts(id) {
         const products = this.getProducts();
-        let pushProduct = false; // предполагая, что продукт не был добавлен
+        let pushProduct = false;
         const index = products.findIndex(product => product.id === id);
         if (index === -1) {
-            products.push({ id: id});
+            products.push({ id: id });
             pushProduct = true;
         } else {
             products.splice(index, 1);
@@ -51,10 +49,9 @@ class StoreCard {
                 sumCatalog += product.price;
             }
         });
-        console.log(htmlCatalog);
         ROOT_STORE_CARD.innerHTML = `<h2 class="title">Products in cart: </h2> <div class="shopping-items">${htmlCatalog}</div> <h3>Total: ${sumCatalog}</h3>`
     }
-} 
+}
 class Header {
     handlerOpenStoreCardPage() {
         const storeCardPage = new StoreCard();
@@ -87,24 +84,40 @@ class Products {
     }
 
     render() {
-        const products = localStorageUtil.getProducts(); 
+        const products = localStorageUtil.getProducts();
         let htmlStore = ``;
         Catalog.forEach(product => {
             const inCart = products.some(item => item.id === product.id);
 
-            console.log(product); 
-            // htmlStore += `<button onclick="productsPage.handlerSetLocalStorage(this, ${product.id})"> d</button>`;
-             htmlStore += `<div class="item-shop">`;
+            htmlStore += `<div class="item-shop">`;
             htmlStore += `<img class="image-box" src="${product.thumbnail}" alt="Product Image">`;
             htmlStore += `<div class="about"> <h3>${product.title}</h3> <p>${product.price}$</p> <p>${product.description}</p> </div>`;
             htmlStore += `<button class="${inCart ? this.classNameActive : ''}" onclick="productsPage.handlerSetLocalStorage(this, ${product.id})"> ${inCart ? this.labelRemove : this.labelAdd}</button>`;
-            htmlStore += `</div>`; 
+            htmlStore += `</div>`;
         });
         ROOT_PRODUCTS.innerHTML = htmlStore;
     }
 }
 
-// Функция для обновления интерфейса страницы
+class SpinnerPage {
+    render() {
+        ROOT_LOADER.innerHTML = '<div class="loader"></div>';
+    }
+
+    handleClear() {
+        ROOT_LOADER.innerHTML = '';
+        ROOT_LOADER.classList = '';
+    }
+}
+
+class ErrorPage {
+    render() {
+        ROOT_ERROR = '<div class="error">An error occurred. Please try again later.</div>';
+    }
+}
+
+
+
 function render() {
     const productsStore = localStorageUtil.getProducts();
     headerPage.render(productsStore.length);
@@ -112,13 +125,16 @@ function render() {
     productsPage.render();
 }
 
- let Catalog = [];
+let Catalog = [];
 
- const localStorageUtil = new LocalStorageUtil();
+const localStorageUtil = new LocalStorageUtil();
 const storeCardPage = new StoreCard();
 const headerPage = new Header();
 const productsPage = new Products();
-  
+const spinnerPage = new SpinnerPage();
+const errorPage = new ErrorPage();
+
+
 render();
 renderDataFromApi();
 function renderDataFromApi() {
@@ -127,17 +143,13 @@ function renderDataFromApi() {
         .then(data => {
             Catalog = data.products;
             setTimeout(() => {
-                // const localStorageUtil = new LocalStorageUtil();
-                Catalog.splice(5);
+                Catalog.splice(6);
+                spinnerPage.handleClear();
                 productsPage.render();
-
-                // spinnerPage.handleClear()
-            }, 1000);
-
-
+            }, 1500);
         })
         .catch(() => {
-            // spinnerPage.handleClear()
-            // errorPage.render()
-        }); 
+            spinnerPage.handleClear()
+            errorPage.render()
+        });
 }
